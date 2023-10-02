@@ -6,6 +6,14 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, Dataset
 from torch.nn.utils.rnn import pad_sequence 
 
+# convert midi files to dataset of tensors
+# create a dataloader
+# define the model
+# train the model
+# save the model
+
+# Jakob De Vreese - 2/10/2023
+
 # Variables
 # Define the paths to the fugue and theme folders
 fugue_folder = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\data\\Fugas'
