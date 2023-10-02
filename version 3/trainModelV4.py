@@ -12,26 +12,34 @@ fugue_folder = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach a
 theme_folder = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\data\\Themas'
 
 # variables for the model
-input_size = 2 # pitch, length
-hidden_size = 128 # number of neurons in hidden layer
-output_size = 2 # pitch, length
+input_size = 3 # pitch, length, track number
+hidden_size = 25 # number of neurons in hidden layer
+output_size = 3 # pitch, length, track number
 learning_rate = 0.001
-batch_size = 3
-n_epochs = 10
+batch_size = 35
+n_epochs = 5
 
 # dataPrep
-# Function: extract notes from file and return a list of tuples containing the pitch and length of each note
-def extract_notes_from_track(midi_file, track_number):
+# Function: extract notes from file and return a list of tensors containing the pitch, length and track number of each note
+def extract_notes_from_track(midi_file, track_number, theme_track_number):
     notes = []
     midi = mido.MidiFile(midi_file)
     for msg in midi.tracks[track_number]:
         if msg.type == 'note_on':
-            check = [msg.note, msg.time]
-            # Check if the message contains the correct information
-            if all(isinstance(item, int) for item in check) and len(check) == 2:
-                notes.append(torch.tensor([msg.note, msg.time], dtype=torch.int32))
+            if track_number == 0:
+                check = [msg.note, msg.time, theme_track_number]
+                # Check if the message contains the correct information
+                if all(isinstance(item, int) for item in check) and len(check) == 3:
+                    notes.append(torch.tensor([msg.note, msg.time, theme_track_number], dtype=torch.int32))
+                else:
+                    continue
             else:
-                continue
+                check = [msg.note, msg.time, track_number]
+                # Check if the message contains the correct information
+                if all(isinstance(item, int) for item in check) and len(check) == 3:
+                    notes.append(torch.tensor([msg.note, msg.time, track_number], dtype=torch.int32))
+                else:
+                    continue
     return notes
 
 # Initialize the lists
@@ -49,7 +57,7 @@ for fugue_filename in os.listdir(fugue_folder):
 
     # Iterate over all tracks in the MIDI file
     for track_number, track in enumerate(midi.tracks):
-        track_notes = extract_notes_from_track(fugue_full_path, track_number)
+        track_notes = extract_notes_from_track(fugue_full_path, track_number, track_number) # when it is a fugue and there is a track on 0 then it is certain the track number stays correct
 
         # Check if the track contains notes
         if len(track_notes) > 0:
@@ -59,7 +67,7 @@ for fugue_filename in os.listdir(fugue_folder):
 
             # Check if the theme file exists before trying to extract notes from it
             if os.path.exists(theme_full_path):
-                theme_notes = extract_notes_from_track(theme_full_path, 0)
+                theme_notes = extract_notes_from_track(theme_full_path, 0, track_number) # to give the theme track number the track_number of the fugue track
         
                 fugue_list.append(track_notes)
                 theme_list.append(theme_notes)
@@ -159,5 +167,5 @@ for epoch in range(n_epochs):
     print(f'Epoch [{epoch+1}/{n_epochs}], Loss: {loss.item():.4f}]')
 
 # Save the trained model
-torch.save(model.state_dict(), 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\version 3\\saved_models\\bachModel.pth')
+torch.save(model.state_dict(), 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\version 3\\saved_models\\bachModelV2.pth')
 print("Model saved")
