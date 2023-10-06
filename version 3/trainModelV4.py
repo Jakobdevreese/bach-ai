@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, Dataset
 from torch.nn.utils.rnn import pad_sequence 
+from tqdm import tqdm
 
 # convert midi files to dataset of tensors
 # create a dataloader
@@ -195,11 +196,13 @@ class bachModel(nn.Module):
         self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
     
-    def forward(self, x):
+    def forward(self, x, temperature=1.0):
         # Convert input tensor to float32
         x = x.float()
         out, _ = self.rnn(x)
         out = self.fc(out)
+        # apply softmax with temperature
+        out = nn.functional.softmax(out / temperature, dim=-1)
         return out
     
 # Initialize the model
@@ -209,8 +212,19 @@ model = bachModel(input_size=input_size, hidden_size=hidden_size, output_size=ou
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+print("")
+print("Model initialized")
+print("")
+print("Start the magic!!!")
+print("")
+print("Training the model")
+print("")
+print("")
+print("")
+
 # Train the model
 for epoch in range(n_epochs):
+    epoch_bar = tqdm(dataloader, desc=f"Epoch {epoch + 1}/{n_epochs}", leave=False)
     for i, batch in enumerate(dataloader):
         # Get the input and output batch
         theme_batch, fugue_batch = batch
@@ -228,6 +242,10 @@ for epoch in range(n_epochs):
         # Backward and optimize
         loss.backward()
         optimizer.step()
+
+        # Update the progress bar
+        epoch_bar.set_postfix(loss=loss.item())
+
 
     # Print output
     print(f'Epoch [{epoch+1}/{n_epochs}], Loss: {loss.item():.4f}]')
