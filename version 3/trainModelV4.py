@@ -14,31 +14,89 @@ from torch.nn.utils.rnn import pad_sequence
 
 # Jakob De Vreese - 2/10/2023
 
+print("""
+
+:::::::::      :::      ::::::::  :::    :::      ::::    ::::   ::::::::  :::::::::  :::::::::: :::             ::::::::::: :::::::::      :::     ::::::::::: ::::    ::: :::::::::: :::::::::  
+:+:    :+:   :+: :+:   :+:    :+: :+:    :+:      +:+:+: :+:+:+ :+:    :+: :+:    :+: :+:        :+:                 :+:     :+:    :+:   :+: :+:       :+:     :+:+:   :+: :+:        :+:    :+: 
++:+    +:+  +:+   +:+  +:+        +:+    +:+      +:+ +:+:+ +:+ +:+    +:+ +:+    +:+ +:+        +:+                 +:+     +:+    +:+  +:+   +:+      +:+     :+:+:+  +:+ +:+        +:+    +:+ 
++#++:++#+  +#++:++#++: +#+        +#++:++#++      +#+  +:+  +#+ +#+    +:+ +#+    +:+ +#++:++#   +#+                 +#+     +#++:++#:  +#++:++#++:     +#+     +#+ +:+ +#+ +#++:++#   +#++:++#:  
++#+    +#+ +#+     +#+ +#+        +#+    +#+      +#+       +#+ +#+    +#+ +#+    +#+ +#+        +#+                 +#+     +#+    +#+ +#+     +#+     +#+     +#+  +#+#+# +#+        +#+    +#+ 
+#+#    #+# #+#     #+# #+#    #+# #+#    #+#      #+#       #+# #+#    #+# #+#    #+# #+#        #+#                 #+#     #+#    #+# #+#     #+#     #+#     #+#   #+#+# #+#        #+#    #+# 
+#########  ###     ###  ########  ###    ###      ###       ###  ########  #########  ########## ##########          ###     ###    ### ###     ### ########### ###    #### ########## ###    ### 
+
+      """)
+
 # Variables
 # Define the paths to the fugue and theme folders
 fugue_folder = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\data\\Fugas'
 theme_folder = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\data\\Themas'
 
+# User Input
+# Ask the user for hidden size, learning rate, batch size and number of epochs
+print("Let's train a model!")
+print("")
+print("Enter the following parameters:")
+print("")
+print("hidden size: number of neurons in hidden layer, default = 25")
+print("learning rate: default = 0.001")
+print("batch size: default = 16")
+print("number of epochs: default = 5")
+print("")
+print("Enter the parameters below:")
+hidden_size = int(input("Enter the hidden size: "))
+learning_rate = float(input("Enter the learning rate: "))
+batch_size = int(input("Enter the batch size: "))
+n_epochs = int(input("Enter the number of epochs: "))
+print("")
+print("Parameters entered")
+print("")
+print("choose a filename for the model")
+print("")
+filename = input("Enter the filename: (end with .pth)")
+filename = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\version 3\\saved_models\\' + filename
+print("")
+
 # variables for the model
 input_size = 3 # pitch, length, track number
-hidden_size = 25 # number of neurons in hidden layer
+#hidden_size = 25 # number of neurons in hidden layer
 output_size = 3 # pitch, length, track number
-learning_rate = 0.001
-batch_size = 35
-n_epochs = 5
+#learning_rate = 0.001
+#batch_size = 35
+#n_epochs = 5
+
+print("")
+print("Parameters entered:")
+print("")
+print("hidden size: " + str(hidden_size))
+print("learning rate: " + str(learning_rate))
+print("batch size: " + str(batch_size))
+print("number of epochs: " + str(n_epochs))
+print("")
+print("input size: " + str(input_size))
+print("output size: " + str(output_size))
+print("")
+print("Loading data")
+print("")
+print("fugue folder: " + fugue_folder)
+print("theme folder: " + theme_folder)
+print("")
+print("Lets prep the data")
+print("")
 
 # dataPrep
 # Function: extract notes from file and return a list of tensors containing the pitch, length and track number of each note
 def extract_notes_from_track(midi_file, track_number, theme_track_number):
-    notes = []
-    midi = mido.MidiFile(midi_file)
+    
+    notes = [] # list of tensors containing the pitch, length and track number of each note
+    midi = mido.MidiFile(midi_file) # load the midi file
+    
     for msg in midi.tracks[track_number]:
         if msg.type == 'note_on':
-            if track_number == 0:
-                check = [msg.note, msg.time, theme_track_number]
+            if track_number == 0: # if it is a theme track
+                check = [msg.note, msg.time, theme_track_number] 
                 # Check if the message contains the correct information
                 if all(isinstance(item, int) for item in check) and len(check) == 3:
-                    notes.append(torch.tensor([msg.note, msg.time, theme_track_number], dtype=torch.int32))
+                    notes.append(torch.tensor([msg.note, msg.time, theme_track_number], dtype=torch.int32)) # add the note to the list with the track matching the fugue voice
                 else:
                     continue
             else:
@@ -82,7 +140,7 @@ for fugue_filename in os.listdir(fugue_folder):
                 # debug print statements
                 print("Fugue and theme added to lists")
                 print("name:" + fugue_filename + " track:" + str(track_number))
-                print("theme:" + theme_filename)
+                print("theme:" + theme_filename + str(track_number))
 
 print("")
 print("Data processing finnished")
@@ -175,5 +233,14 @@ for epoch in range(n_epochs):
     print(f'Epoch [{epoch+1}/{n_epochs}], Loss: {loss.item():.4f}]')
 
 # Save the trained model
-torch.save(model.state_dict(), 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\version 3\\saved_models\\bachModelV2.pth')
+torch.save(model.state_dict(), filename)
+print("")
 print("Model saved")
+print("")
+print("path: " + filename)
+print("")
+print("Thank you for using this program!")
+print("")
+print("Jakob De Vreese - 2/10/2023")
+
+# End of program
