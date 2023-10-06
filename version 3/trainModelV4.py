@@ -196,7 +196,7 @@ class bachModel(nn.Module):
         self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
     
-    def forward(self, x, temperature=1.0):
+    def forward(self, x, temperature=2.5):
         # Convert input tensor to float32
         x = x.float()
         out, _ = self.rnn(x)
@@ -224,7 +224,7 @@ print("")
 
 # Train the model
 for epoch in range(n_epochs):
-    epoch_bar = tqdm(dataloader, desc=f"Epoch {epoch + 1}/{n_epochs}", leave=False)
+    epoch_bar = tqdm(dataloader, desc=f"Epoch {epoch + 1}/{n_epochs}", leave=False, total=len(dataloader))
     for i, batch in enumerate(dataloader):
         # Get the input and output batch
         theme_batch, fugue_batch = batch
@@ -244,7 +244,7 @@ for epoch in range(n_epochs):
         optimizer.step()
 
         # Update the progress bar
-        epoch_bar.set_postfix(loss=loss.item())
+        epoch_bar.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]['lr'], epoch=epoch)
 
 
     # Print output

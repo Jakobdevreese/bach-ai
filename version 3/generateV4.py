@@ -17,7 +17,7 @@ class MyModel(nn.Module):
 
 # Define the paths to the theme and output MIDI files
 theme_file = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\input\\input_theme.mid'
-output_file = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\output\\output_test_theme2.mid'
+output_file = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\output\\output_test_theme3.mid'
 
 # Extract notes from the theme file
 theme_notes = []
@@ -25,10 +25,11 @@ midi = mido.MidiFile(theme_file)
 for msg in midi.tracks[0]:
     if msg.type == 'note_on':
         theme_notes.append(torch.tensor([msg.note, msg.time, 1], dtype=torch.float32))
+        print(msg.note, msg.time)
 
 # Load the saved model and create a new instance of the model with matching architecture
-saved_model = torch.load('C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\version 3\\saved_models\\model_250.pth')
-model = MyModel(input_size=3, hidden_size=250, output_size=3)
+saved_model = torch.load('C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\version 3\\saved_models\\model_350.pth')
+model = MyModel(input_size=3, hidden_size=350, output_size=3)
 
 # Load the saved model's state_dict
 model.load_state_dict(saved_model)
