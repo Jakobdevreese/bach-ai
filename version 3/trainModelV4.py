@@ -87,26 +87,37 @@ print("")
 # dataPrep
 # Function: extract notes from file and return a list of tensors containing the pitch, length and track number of each note
 def extract_notes_from_track(midi_file, track_number, theme_track_number):
-    
-    notes = [] # list of tensors containing the pitch, length and track number of each note
-    midi = mido.MidiFile(midi_file) # load the midi file
-    
+    notes = []  # list of tensors containing the pitch, length, and track number of each note
+    midi = mido.MidiFile(midi_file)  # load the MIDI file
+
+    # Maintain a dictionary to keep track of active notes and their start times
+    active_notes = {}
+
     for msg in midi.tracks[track_number]:
         if msg.type == 'note_on':
-            if track_number == 0: # if it is a theme track
-                check = [msg.note, msg.time, theme_track_number] 
-                # Check if the message contains the correct information
-                if all(isinstance(item, int) for item in check) and len(check) == 3:
-                    notes.append(torch.tensor([msg.note, msg.time, theme_track_number], dtype=torch.int32)) # add the note to the list with the track matching the fugue voice
-                else:
-                    continue
+            if track_number == 0:  # if it is a theme track
+                check = [msg.note, msg.time, theme_track_number]
             else:
                 check = [msg.note, msg.time, track_number]
-                # Check if the message contains the correct information
-                if all(isinstance(item, int) for item in check) and len(check) == 3:
-                    notes.append(torch.tensor([msg.note, msg.time, track_number], dtype=torch.int32))
+
+            # Check if the message contains the correct information
+            if all(isinstance(item, int) for item in check) and len(check) == 3:
+                note = torch.tensor([msg.note, msg.time, track_number], dtype=torch.int32)
+                notes.append(note)
+                
+                # Store the start time of the active note
+                active_notes[msg.note] = msg.time
+        elif msg.type == 'note_off':
+            if msg.note in active_notes:
+                start_time = active_notes[msg.note]
+                duration = msg.time
+                if track_number == 0:  # if it is a theme track
+                    note = torch.tensor([msg.note, duration, theme_track_number], dtype=torch.int32)
                 else:
-                    continue
+                    note = torch.tensor([msg.note, duration, track_number], dtype=torch.int32)
+                notes.append(note)
+                del active_notes[msg.note]
+
     return notes
 
 # Initialize the lists
@@ -196,7 +207,7 @@ class bachModel(nn.Module):
         self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
     
-    def forward(self, x, temperature=2.5):
+    def forward(self, x, temperature=4.5):
         # Convert input tensor to float32
         x = x.float()
         out, _ = self.rnn(x)

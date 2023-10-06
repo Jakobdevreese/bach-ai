@@ -16,20 +16,38 @@ class MyModel(nn.Module):
         return out
 
 # Define the paths to the theme and output MIDI files
-theme_file = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\input\\input_theme.mid'
-output_file = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\output\\output_test_theme3.mid'
+theme_file = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\input\\theme_input.mid'
+output_file = 'C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\output\\output_test_theme5.mid'
 
 # Extract notes from the theme file
-theme_notes = []
-midi = mido.MidiFile(theme_file)
+theme_notes = []  # list of tensors containing the pitch, length, and track number of each note
+midi = mido.MidiFile(theme_file)  # load the MIDI theme file
+
+# Maintain a dictionary to keep track of active notes and their start times
+active_notes = {}
+
 for msg in midi.tracks[0]:
     if msg.type == 'note_on':
-        theme_notes.append(torch.tensor([msg.note, msg.time, 1], dtype=torch.float32))
-        print(msg.note, msg.time)
+        check = [msg.note, msg.time, 1]  # Assuming it's always the first track (track_number 1)
+
+        # Check if the message contains the correct information
+        if all(isinstance(item, int) for item in check) and len(check) == 3:
+            note = torch.tensor([msg.note, msg.time, 1], dtype=torch.float32)
+            theme_notes.append(note)
+
+            # Store the start time of the active note
+            active_notes[msg.note] = msg.time
+    elif msg.type == 'note_off':
+        if msg.note in active_notes:
+            start_time = active_notes[msg.note]
+            duration = msg.time
+            note = torch.tensor([msg.note, duration, 1], dtype=torch.float32)
+            theme_notes.append(note)
+            del active_notes[msg.note]
 
 # Load the saved model and create a new instance of the model with matching architecture
-saved_model = torch.load('C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\version 3\\saved_models\\model_350.pth')
-model = MyModel(input_size=3, hidden_size=350, output_size=3)
+saved_model = torch.load('C:\\Users\\Jakob\\OneDrive - Hogeschool Gent\\Try Out AI\\bach ai\\version 3\\saved_models\\Model_250.pth')
+model = MyModel(input_size=3, hidden_size=250, output_size=3)
 
 # Load the saved model's state_dict
 model.load_state_dict(saved_model)
@@ -38,19 +56,20 @@ model.load_state_dict(saved_model)
 desired_length = 100  # Adjust this to your desired length
 fugue_notes = []
 
-with torch.no_grad():
-    theme_tensor = torch.stack(theme_notes).unsqueeze(0)
-    while len(fugue_notes) < desired_length:
-        fugue_tensor = model(theme_tensor)
-        # Process the fugue_tensor to get the next note
-        next_note = fugue_tensor.squeeze().tolist()  # Example: [note, time, track]
-        # Access the individual values of next_note and convert them to integers
-        note = int(next_note[0][0])  # Extract note from tensor
-        print(note)
-        time = int(next_note[0][1])  # Extract time from tensor
-        track = int(1)  # Extract track from tensor
-        fugue_notes.append([note, time, track])  # Append the converted values
+# Initialize the theme_tensor with the theme_notes
+theme_tensor = torch.stack(theme_notes).unsqueeze(0)
+desired_length = 100  # Adjust this to your desired length
 
+ 
+
+with torch.no_grad():
+    # Generate a sequence of desired_length notes in one forward pass
+    fugue_tensor = model(theme_tensor)
+    fugue_notes = fugue_tensor.squeeze().tolist()
+
+# Process the fugue_notes to extract individual notes
+fugue_notes = [[int(note[0]), int(note[1]), 1] for note in fugue_notes]
+print(fugue_notes)
 
 # Create a MIDI file with the fugue voice
 midi = mido.MidiFile()
@@ -66,15 +85,24 @@ track.append(mido.MetaMessage('set_tempo', tempo=mido.bpm2tempo(60)))
 # Set time signature (e.g., 4/4 time)
 track.append(mido.MetaMessage('time_signature', numerator=4, denominator=4, clocks_per_click=24, notated_32nd_notes_per_beat=8))
 
+# Initialize the total_time to keep track of the accumulated time
+total_time = 0
+
 for note in fugue_notes:
-    # Create note_on messages for each note in the fugue
-    note_on = mido.Message('note_on', note=note[0], time=note[1], channel=0)
-    # Append the note_on message to the track
-    track.append(note_on)
-    # Create a corresponding note_off message to end the note
-    note_off = mido.Message('note_off', note=note[0], time=0)
-    # Append the note_off message to the track
-    track.append(note_off)
+    if isinstance(note[0], int) and -127 <= note[0] <= 127:
+        note_value = abs(note[0])
+        duration = abs(note[1])
+
+        # Create note_on message for the note
+        note_on = mido.Message('note_on', note=note_value, velocity=64, time=total_time)
+        track.append(note_on)
+
+        # Update the total_time by adding the duration
+        total_time += duration
+
+        # Create note_off message for the note
+        note_off = mido.Message('note_off', note=note_value, velocity=64, time=total_time)
+        track.append(note_off)
 
 # Save the MIDI file
 midi.save(output_file)
