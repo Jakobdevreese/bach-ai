@@ -29,6 +29,9 @@ To use this project:
 5. Train the model using the generated dataset.
 6. Once the model is trained, you can generate new fugues by providing a theme.
 
+## Version
+The usable version is located in bach-ai v01
+
 
 ## Contributing
 Contributions to this project are welcome. If you have ideas for improvements or new features, please open an issue or submit a pull request.
