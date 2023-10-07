@@ -39,12 +39,14 @@ print("")
 print("Enter the following parameters:")
 print("")
 print("hidden size: number of neurons in hidden layer, default = 25")
+print("temperature: default = 4.5")
 print("learning rate: default = 0.001")
 print("batch size: default = 16")
 print("number of epochs: default = 5")
 print("")
 print("Enter the parameters below:")
 hidden_size = int(input("Enter the hidden size: "))
+temperature = float(input("Enter the temperature: "))
 learning_rate = float(input("Enter the learning rate: "))
 batch_size = int(input("Enter the batch size: "))
 n_epochs = int(input("Enter the number of epochs: "))
@@ -146,7 +148,14 @@ for fugue_filename in os.listdir(fugue_folder):
             # Check if the theme file exists before trying to extract notes from it
             if os.path.exists(theme_full_path):
                 theme_notes = extract_notes_from_track(theme_full_path, 0, track_number) # to give the theme track number the track_number of the fugue track
-        
+
+                # check if first note is empty
+                if len(theme_notes[0]) == 0:
+                    del theme_notes[0]
+                
+                if len(track_notes[0]) == 0:
+                    del track_notes[0]
+                
                 fugue_list.append(track_notes)
                 theme_list.append(theme_notes)
                 # debug print statements
@@ -207,7 +216,7 @@ class bachModel(nn.Module):
         self.rnn = nn.RNN(input_size, hidden_size, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
     
-    def forward(self, x, temperature=4.5):
+    def forward(self, x, temperature=temperature):
         # Convert input tensor to float32
         x = x.float()
         out, _ = self.rnn(x)
