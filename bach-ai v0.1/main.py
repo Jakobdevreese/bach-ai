@@ -36,7 +36,7 @@ filename_path = os.path.join(cwd, r"saved_models\{}".format(filename)) # file to
 
 # Start dataprep
 # Call the extract_notes function to get the fugue count, fugue notes, and theme notes
-fugue_count, fugue_notes, theme_notes = dataprep.extract_notes()
+fugue_notes, theme_notes = dataprep.extract_notes()
 
 # Pad the sequences
 fugue_list_padded, theme_list_padded = paddingSeq.padding_lists(fugue_notes, theme_notes)

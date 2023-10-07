@@ -96,19 +96,9 @@ def extract_notes():
                 if os.path.exists(theme_full_path):
                     theme_notes = extract_notes_from_track(theme_full_path, 0, track_number) # to give the theme track number the track_number of the fugue track
 
-                    # Check for empty notes
-                    for note in theme_notes:
-                        if len(note) == 0:
-                            theme_notes.remove(note)
-                        if note[0] > 127 or note[0] < 1 or note[1] <= 0: # check if the note is in the right range and time is not 0
-                            theme_notes.remove(note)
-
-                
-                    for note in track_notes:
-                        if len(note) == 0:
-                            track_notes.remove(note)
-                        if note[0] > 127 or note[0] < 1 or note[1] <= 0: # check if the note is in the right range and time is not 0
-                            track_notes.remove(note)
+                    # Filter out unwanted notes - Notes with pitch 0 or negative pitch, notes with negative duration
+                    theme_notes = [note for note in theme_notes if len(note) > 0 and 1 <= note[0] <= 127 and note[1] > 0] 
+                    track_notes = [note for note in track_notes if len(note) > 0 and 1 <= note[0] <= 127 and note[1] > 0]
                 
                     fugue_list.append(track_notes)
                     theme_list.append(theme_notes)
